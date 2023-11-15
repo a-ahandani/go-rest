@@ -4,6 +4,8 @@ go 1.21.4
 
 require github.com/gofiber/fiber v1.14.6
 
+require github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
