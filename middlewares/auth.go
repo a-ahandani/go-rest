@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"note-api-fiber/config"
-	"note-api-fiber/internal/models"
+	"gorest/config"
+	"gorest/internal/models"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"

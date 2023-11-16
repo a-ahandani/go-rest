@@ -1,8 +1,8 @@
 package userRoutes
 
 import (
-	userHandlers "note-api-fiber/internal/handlers/user"
-	"note-api-fiber/middlewares"
+	userHandlers "gorest/internal/handlers/user"
+	"gorest/middlewares"
 
 	"github.com/gofiber/fiber/v2"
 )

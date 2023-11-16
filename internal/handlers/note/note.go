@@ -1,8 +1,8 @@
 package noteHandlers
 
 import (
-	"note-api-fiber/database"
-	"note-api-fiber/internal/models"
+	"gorest/database"
+	"gorest/internal/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"note-api-fiber/database"
-	"note-api-fiber/router"
+	"gorest/database"
+	"gorest/router"
 
 	"github.com/gofiber/fiber/v2"
 )

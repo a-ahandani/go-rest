@@ -1,9 +1,9 @@
 package router
 
 import (
-	userHandlers "note-api-fiber/internal/handlers/user"
-	noteRoutes "note-api-fiber/router/note"
-	userRoutes "note-api-fiber/router/user"
+	userHandlers "gorest/internal/handlers/user"
+	noteRoutes "gorest/router/note"
+	userRoutes "gorest/router/user"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -14,5 +14,4 @@ func SetupRoutes(app *fiber.App) {
 	noteRoutes.SetupNoteRoutes(api)
 	userRoutes.SetupUserRoutes(api)
 	api.Post("/auth", userHandlers.LoginUser)
-
 }

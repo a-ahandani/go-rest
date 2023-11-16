@@ -1,7 +1,7 @@
 package noteRoutes
 
 import (
-	noteHandlers "note-api-fiber/internal/handlers/note"
+	noteHandlers "gorest/internal/handlers/note"
 
 	"github.com/gofiber/fiber/v2"
 )

@@ -1,10 +1,10 @@
 package userHandlers
 
 import (
-	"note-api-fiber/config"
-	"note-api-fiber/database"
-	"note-api-fiber/internal/models"
-	"note-api-fiber/internal/validators"
+	"gorest/config"
+	"gorest/database"
+	"gorest/internal/models"
+	"gorest/internal/validators"
 	"time"
 
 	"github.com/gofiber/fiber/v2"

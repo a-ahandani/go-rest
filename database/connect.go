@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
+	"gorest/config"
+	model "gorest/internal/models"
 	"log"
-	"note-api-fiber/config"
-	model "note-api-fiber/internal/models"
 	"strconv"
 
 	"gorm.io/driver/postgres"

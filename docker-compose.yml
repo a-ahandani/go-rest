@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      DB_HOST: postgres
+      DB_NAME: gorest
+      DB_USER: postgres
+      DB_PASSWORD: 4631
+      DB_PORT: 5432
+      SECRET: secret
+    command: ["air"]
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: gorest
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 4631
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d
