@@ -9,14 +9,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-    environment:
-      DB_HOST: postgres
-      DB_NAME: gorest
-      DB_USER: postgres
-      DB_PASSWORD: 4631
-      DB_PORT: 5432
-      SECRET: secret
-    command: ["air"]
+    command: [ "air" ]
 
   postgres:
     image: postgres:latest
