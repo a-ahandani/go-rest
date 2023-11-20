@@ -10,6 +10,7 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
+
 	api := app.Group("/api", logger.New())
 	noteRoutes.SetupNoteRoutes(api)
 	userRoutes.SetupUserRoutes(api)

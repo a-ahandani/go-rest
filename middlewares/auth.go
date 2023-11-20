@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"gorest/config"
+	userHandlers "gorest/internal/handlers/user"
 	"gorest/internal/models"
 	"strings"
 
@@ -26,10 +27,6 @@ func AuthRequired(c *fiber.Ctx) error {
 	}
 
 	tokenString = parts[1]
-
-	// token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-	// 	return []byte(config.Config("SECRET")), nil
-	// })
 
 	// Parse the token
 	token, err := jwt.ParseWithClaims(tokenString, &models.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -56,7 +53,18 @@ func AuthRequired(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Locals("userID", claims.UserID)
+	// Fetch user from the database based on the user ID
+	user, err := userHandlers.GetUserByID(claims.UserID)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error fetching user",
+		})
+	}
+
+	// Set user and roles in the context locals
+	c.Locals("user", user)
+	c.Locals("roles", user.Roles) // Adjusted to use user.Roles instead of user.Roles.IDs
 
 	return c.Next()
 }

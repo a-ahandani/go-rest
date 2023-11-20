@@ -10,6 +10,7 @@ import (
 func SetupUserRoutes(r fiber.Router) {
 	user := r.Group("/users")
 	user.Use(middlewares.AuthRequired)
+	user.Use(middlewares.CasbinMiddleware)
 
 	user.Post("/", userHandlers.CreateUser)
 	user.Get("/", userHandlers.GetUsers)
