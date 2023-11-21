@@ -1,7 +1,6 @@
 package router
 
 import (
-	userHandlers "gorest/internal/handlers/user"
 	noteRoutes "gorest/router/note"
 	userRoutes "gorest/router/user"
 
@@ -14,5 +13,5 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api", logger.New())
 	noteRoutes.SetupNoteRoutes(api)
 	userRoutes.SetupUserRoutes(api)
-	api.Post("/auth", userHandlers.LoginUser)
+	// api.Post("/auth", userHandlers.LoginUser)
 }

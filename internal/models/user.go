@@ -13,7 +13,7 @@ type User struct {
 	Email    string    `gorm:"type:varchar(100);uniqueIndex;not null" validate:"required,email"`
 	Password string    `gorm:"type:varchar(100);not null" validate:"required,min=6"`
 	Verified *bool     `gorm:"not null;default:false"`
-	Roles    []string  `gorm:"many2many:user_roles;" validate:"required"`
+	Roles    []Role    `gorm:"many2many:user_roles;"`
 }
 
 type Role struct {

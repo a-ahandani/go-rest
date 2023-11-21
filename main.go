@@ -15,7 +15,6 @@ func main() {
 	middlewares.InitCasbin()
 	router.SetupRoutes(app)
 
-	// Initialize the application (create superadmin user and basic roles)
 	if err := initializers.CreateAdmin(); err != nil {
 		panic("Failed to initialize the application: " + err.Error())
 	}

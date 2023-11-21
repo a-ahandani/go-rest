@@ -12,9 +12,9 @@ func SetupUserRoutes(r fiber.Router) {
 	user.Use(middlewares.AuthRequired)
 	user.Use(middlewares.CasbinMiddleware)
 
-	user.Post("/", userHandlers.CreateUser)
-	user.Get("/", userHandlers.GetUsers)
-	user.Get("/:id", userHandlers.GetUser)
-	user.Put("/:id", userHandlers.UpdateUser)
+	user.Post("/", userHandlers.CreateUserAPI)
+	user.Get("/", userHandlers.GetUsersAPI)
+	user.Get("/:id", userHandlers.GetUserAPI)
+	user.Put("/:id", userHandlers.UpdateUserAPI)
 
 }

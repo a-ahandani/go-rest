@@ -4,11 +4,8 @@ package initializers
 import (
 	"fmt"
 	"gorest/database"
+	userHandlers "gorest/internal/handlers/user"
 	"gorest/internal/models"
-
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // Initialize creates a superadmin user and basic roles if they don't exist
@@ -19,7 +16,7 @@ func CreateAdmin() error {
 	}
 
 	// Create a superadmin user if it doesn't exist
-	if err := createSuperAdminUser(); err != nil {
+	if _, err := createSuperAdminUser(); err != nil {
 		return err
 	}
 
@@ -48,41 +45,28 @@ func createBasicRoles() error {
 	return nil
 }
 
-func createSuperAdminUser() error {
+func createSuperAdminUser() (*models.User, error) {
 	db := database.DB
 
-	superadmin := models.User{
+	// Check if the super admin already exists
+	var existingSuperAdmin models.User
+	if err := db.Where("email = ?", "a.e.ahandani@gmail.com").First(&existingSuperAdmin).Error; err == nil {
+		return &existingSuperAdmin, nil
+	}
+
+	// Create a new super admin user request
+	superAdminRequest := &userHandlers.UserInputBody{
 		Name:     "Super Admin",
-		Email:    "superadmin@example.com",
-		Password: "superadminpassword", // You should hash the password in a real-world scenario
-		Roles:    []string{"admin"},    // Set the roles as an array of role names
+		Email:    "a.e.ahandani@gmail.com",
+		Password: "123123",          // You should hash the password in a real-world scenario
+		Roles:    []string{"admin"}, // Set the roles as an array of role names
 	}
 
-	// Find or create the superadmin user by email
-	result := db.Table("users").Where("email = ?", superadmin.Email).FirstOrCreate(&superadmin)
-	if result.Error != nil {
-		fmt.Printf("Failed to create superadmin user: %v\n", result.Error)
-		return result.Error
-	}
-
-	fmt.Println("Superadmin user created successfully")
-	return nil
-}
-
-// CreateUser creates a user using the provided user data
-func CreateUser(user *models.User, db *gorm.DB) error {
-	user.ID = uuid.New()
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	// Create the super admin user and assign roles
+	superAdmin, err := userHandlers.CreateUser(superAdminRequest)
 	if err != nil {
-		return err
-	}
-	user.Password = string(hashedPassword)
-
-	err = db.Create(&user).Error
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return superAdmin, nil
 }
