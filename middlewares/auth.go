@@ -11,7 +11,6 @@ import (
 )
 
 func AuthRequired(c *fiber.Ctx) error {
-	return c.Next()
 
 	tokenString := c.Get("Authorization")
 

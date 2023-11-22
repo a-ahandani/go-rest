@@ -2,11 +2,15 @@ package userHandlers
 
 import (
 	"errors"
+	"fmt"
+	"gorest/config"
 	"gorest/database"
 	"gorest/internal/models"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -20,21 +24,29 @@ type UserInputBody struct {
 }
 
 func GetUsersAPI(c *fiber.Ctx) error {
-
 	db := database.DB
 	var users []models.User
-	db.Find(&users)
+
+	// Preload the Roles association
+	if err := db.Preload("Roles").Find(&users).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error retrieving users",
+			"error":   err.Error(),
+		})
+	}
+
 	if len(users) == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "No users found",
 		})
 	}
-	// remove password from response
+
+	// Remove password from response
 	for i := range users {
 		users[i].Password = ""
 	}
-	return c.JSON(fiber.Map{"status": "success", "message": "All users", "data": users})
 
+	return c.JSON(fiber.Map{"status": "success", "message": "All users", "data": users})
 }
 
 func CreateUser(input *UserInputBody) (*models.User, error) {
@@ -198,50 +210,86 @@ func UpdateUserAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Updated user", "data": updatedUser})
 }
 
-// func LoginUser(c *fiber.Ctx) error {
-// 	var loginData models.User
-// 	if err := c.BodyParser(&loginData); err != nil {
-// 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-// 			"message": "Cannot parse JSON",
-// 		})
-// 	}
+func LoginUser(c *fiber.Ctx) error {
+	var loginData models.User
+	if err := c.BodyParser(&loginData); err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Cannot parse JSON",
+		})
+	}
 
-// 	var user models.User
-// 	db := database.DB
-// 	result := db.Where("email = ?", loginData.Email).First(&user)
-// 	if result.Error != nil {
-// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-// 			"message": "Unauthorized",
-// 		})
-// 	}
+	var user models.User
+	db := database.DB
+	result := db.Where("email = ?", loginData.Email).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error retrieving user",
+		})
+	}
 
-// 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
-// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-// 			"message": "Unauthorized",
-// 		})
-// 	}
+	// Use constant time comparison for password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": "Invalid password",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error comparing passwords",
+		})
+	}
 
-// 	// Generate a JWT token with user ID and roles
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &models.TokenClaims{
-// 		UserID: user.ID,
-// 		Roles:  user.Roles, // Include user roles in the JWT claims
-// 		StandardClaims: jwt.StandardClaims{
-// 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
-// 		},
-// 	})
-// 	tokenString, err := token.SignedString([]byte(config.Config("SECRET")))
-// 	if err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"message": "Could not login",
-// 		})
-// 	}
+	fmt.Println(user)
+	// Generate a JWT token with user ID and roles
+	roleNames, err := getUserRolesByID(user.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error retrieving user roles",
+		})
+	}
 
-// 	return c.JSON(fiber.Map{
-// 		"status":  "success",
-// 		"message": "Success",
-// 		"token":   tokenString,
-// 	})
-// }
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &models.TokenClaims{
+		UserID: user.ID,
+		Roles:  roleNames,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+		},
+	})
+	tokenString, err := token.SignedString([]byte(config.Config("SECRET")))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not login",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Success",
+		"token":   tokenString,
+	})
+}
+
+// getUserRolesByID fetches role names for a given user ID
+func getUserRolesByID(userID uuid.UUID) ([]string, error) {
+	db := database.DB
+	var roles []models.Role
+
+	if err := db.Model(&models.User{ID: userID}).Association("Roles").Find(&roles); err != nil {
+		return nil, err
+	}
+
+	var roleNames []string
+	for _, role := range roles {
+		roleNames = append(roleNames, role.Name)
+	}
+
+	return roleNames, nil
+}
 
 // GetUserByID retrieves a user by ID from the database
 func GetUserByID(userID uuid.UUID) (*models.User, error) {
