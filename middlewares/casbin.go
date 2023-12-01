@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"gorest/database"
 
+	"gorest/internal/models"
+
 	"github.com/casbin/casbin/v2"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -28,6 +31,10 @@ func InitCasbin() {
 	if Enforcer == nil {
 		panic("Casbin Enforcer is nil")
 	}
+	Enforcer.AddPolicy("admin", "/api/users", "GET")
+	Enforcer.AddPolicy("admin", "/api/users", "POST")
+	Enforcer.AddPolicy("admin", "/api/users", "PUT")
+	Enforcer.AddPolicy("admin", "/api/users", "PATCH")
 
 	// Load policy from database
 	err = Enforcer.LoadPolicy()
@@ -39,23 +46,34 @@ func InitCasbin() {
 }
 
 func CasbinMiddleware(c *fiber.Ctx) error {
-	return c.Next()
 	// Check permissions using Casbin
-	subject := "alice" // Replace with the actual subject (user, role, etc.)
-	obj := c.Path()    // Use the path as the object in this example
-	act := c.Method()  // Use the HTTP method as the action in this example
+	obj := c.Path()   // Use the path as the object in this example
+	act := c.Method() // Use the HTTP method as the action in this example
 
-	// Check permission
-	ok, err := Enforcer.Enforce(subject, obj, act)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Internal Server Error")
+	// Get the user from the context
+	user, ok := c.Locals("user").(*models.User)
+	if !ok || user == nil {
+		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
 
-	if ok {
-		// User has permission, continue to the next middleware or route handler
-		return c.Next()
+	fmt.Println("obj", obj, "act", act)
+
+	// Check permission for each role
+	for _, role := range user.Roles {
+		subject := role.Name
+
+		// Check permission
+		ok, err := Enforcer.Enforce(subject, obj, act)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Internal Server Error")
+		}
+
+		if ok {
+			// User has permission, continue to the next middleware or route handler
+			return c.Next()
+		}
 	}
 
-	// User does not have permission, return a forbidden response
+	// User does not have permission for any role, return a forbidden response
 	return c.Status(fiber.StatusForbidden).SendString("Permission Denied")
 }
