@@ -1,16 +1,16 @@
 package noteRoutes
 
 import (
-	noteHandlers "gorest/internal/handlers/note"
+	handlers "gorest/internal/handlers"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func SetupNoteRoutes(r fiber.Router) {
 	note := r.Group("/notes")
-	note.Post("/", noteHandlers.CreateNote)
-	note.Get("/", noteHandlers.GetNotes)
-	note.Get("/:id", noteHandlers.GetNote)
-	note.Put("/:id", noteHandlers.UpdateNote)
-	note.Delete("/:id", noteHandlers.DeleteNote)
+	note.Post("/", handlers.CreateNote)
+	note.Get("/", handlers.GetNotes)
+	note.Get("/:id", handlers.GetNote)
+	note.Put("/:id", handlers.UpdateNote)
+	note.Delete("/:id", handlers.DeleteNote)
 }

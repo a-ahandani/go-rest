@@ -4,8 +4,8 @@ package initializers
 import (
 	"fmt"
 	"gorest/database"
-	userHandlers "gorest/internal/handlers/user"
 	"gorest/internal/models"
+	"gorest/internal/utils"
 )
 
 // Initialize creates a superadmin user and basic roles if they don't exist
@@ -55,15 +55,17 @@ func createSuperAdminUser() (*models.User, error) {
 	}
 
 	// Create a new super admin user request
-	superAdminRequest := &userHandlers.UserInputBody{
-		Name:     "Super Admin",
-		Email:    "a.e.ahandani@gmail.com",
-		Password: "123123",          // You should hash the password in a real-world scenario
-		Roles:    []string{"admin"}, // Set the roles as an array of role names
+	superAdminRequest := &utils.UserPayload{
+		User: models.User{
+			Name:     "Super Admin",
+			Email:    "a.e.ahandani@gmail.com",
+			Password: "123123",
+		},
+		Roles: []string{"admin"}, // Set the roles as an array of role names
 	}
 
 	// Create the super admin user and assign roles
-	superAdmin, err := userHandlers.CreateUser(superAdminRequest)
+	superAdmin, err := utils.CreateUser(superAdminRequest)
 	if err != nil {
 		return nil, err
 	}

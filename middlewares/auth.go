@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"gorest/config"
-	userHandlers "gorest/internal/handlers/user"
 	"gorest/internal/models"
+	utils "gorest/internal/utils"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,19 +11,20 @@ import (
 )
 
 func AuthRequired(c *fiber.Ctx) error {
-
 	tokenString := c.Get("Authorization")
 
 	if tokenString == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Unauthorized",
+			"error":   "Unauthorized",
+			"message": "No authorization token provided",
 		})
 	}
 
 	parts := strings.Split(tokenString, " ")
 	if len(parts) != 2 {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Malformed Token 1",
+			"error":   "Malformed Token",
+			"message": "Invalid token format. It should be in the form 'Bearer <token>'",
 		})
 	}
 
@@ -36,13 +37,15 @@ func AuthRequired(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Malformed Token 2",
+			"error":   "Malformed Token",
+			"message": "Unable to parse the provided token",
 		})
 	}
 
 	if !token.Valid {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Token is not valid",
+			"error":   "Invalid Token",
+			"message": "The provided token is not valid",
 		})
 	}
 
@@ -50,22 +53,22 @@ func AuthRequired(c *fiber.Ctx) error {
 
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Malformed Token 3",
+			"error":   "Malformed Token",
+			"message": "Unable to extract claims from the provided token",
 		})
 	}
 
 	// Fetch user from the database based on the user ID
-	user, err := userHandlers.GetUserByID(claims.UserID)
+	user, err := utils.GetUserByID(claims.UserID)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Error fetching user",
+			"error":   "Internal Server Error",
+			"message": "Error fetching user from the database",
 		})
 	}
 
-	// Set user and roles in the context locals
 	c.Locals("user", user)
-	c.Locals("roles", user.Roles) // Adjusted to use user.Roles instead of user.Roles.IDs
 
 	return c.Next()
 }

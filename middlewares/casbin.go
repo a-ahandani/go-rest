@@ -31,6 +31,8 @@ func InitCasbin() {
 	if Enforcer == nil {
 		panic("Casbin Enforcer is nil")
 	}
+	// Enforcer.AddPolicy("admin", "*", "*")
+
 	Enforcer.AddPolicy("admin", "/api/users", "GET")
 	Enforcer.AddPolicy("admin", "/api/users", "POST")
 	Enforcer.AddPolicy("admin", "/api/users", "PUT")
@@ -55,9 +57,6 @@ func CasbinMiddleware(c *fiber.Ctx) error {
 	if !ok || user == nil {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
-
-	fmt.Println("obj", obj, "act", act)
-
 	// Check permission for each role
 	for _, role := range user.Roles {
 		subject := role.Name

@@ -1,4 +1,4 @@
-package noteHandlers
+package handlers
 
 import (
 	"gorest/database"

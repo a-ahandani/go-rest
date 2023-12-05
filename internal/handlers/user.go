@@ -1,4 +1,4 @@
-package userHandlers
+package handlers
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"gorest/config"
 	"gorest/database"
 	"gorest/internal/models"
-	"strings"
+	utils "gorest/internal/utils"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,14 +16,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserInputBody struct {
-	Name     string   `json:"name"`
-	Email    string   `json:"email"`
-	Password string   `json:"password"`
-	Roles    []string `json:"roles"`
+type UserHandler struct {
+	GetUsersAPIx func(c *fiber.Ctx) error
 }
 
-func GetUsersAPI(c *fiber.Ctx) error {
+func (u *UserHandler) GetUsersAPI(c *fiber.Ctx) error {
 	db := database.DB
 	var users []models.User
 
@@ -49,46 +46,8 @@ func GetUsersAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "All users", "data": users})
 }
 
-func CreateUser(input *UserInputBody) (*models.User, error) {
-	db := database.DB
-
-	// Create a new user instance
-	user := models.User{
-		ID:       uuid.New(),
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: input.Password,
-	}
-
-	// Hash the user's password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	user.Password = string(hashedPassword)
-
-	// Create the user in the database
-	if err := db.Create(&user).Error; err != nil {
-		return nil, err
-	}
-
-	// Assign roles to the user based on the request body
-	roles := input.Roles
-	if len(roles) > 0 {
-		for _, roleName := range roles {
-			roleName = strings.TrimSpace(roleName)
-			var role models.Role
-			if err := db.Where("name = ?", roleName).First(&role).Error; err == nil {
-				db.Model(&user).Association("Roles").Append(&role)
-			}
-		}
-	}
-
-	return &user, nil
-}
-
-func CreateUserAPI(c *fiber.Ctx) error {
-	input := new(UserInputBody)
+func (u *UserHandler) CreateUserAPI(c *fiber.Ctx) error {
+	input := new(utils.UserPayload)
 
 	// Parse JSON request body
 	if err := c.BodyParser(input); err != nil {
@@ -97,7 +56,7 @@ func CreateUserAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := CreateUser(input)
+	user, err := utils.CreateUser(input)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not create user",
@@ -108,7 +67,7 @@ func CreateUserAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": user})
 }
 
-func GetUserAPI(c *fiber.Ctx) error {
+func (u *UserHandler) GetUserAPI(c *fiber.Ctx) error {
 	var user *models.User
 
 	userID, err := uuid.Parse(c.Params("id"))
@@ -119,7 +78,7 @@ func GetUserAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err = GetUserByID(userID)
+	user, err = utils.GetUserByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -136,53 +95,7 @@ func GetUserAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
 }
 
-func UpdateUser(userID uuid.UUID, request *UserInputBody) (*models.User, error) {
-	db := database.DB
-
-	// Find the existing user
-	var existingUser models.User
-	if err := db.First(&existingUser, userID).Error; err != nil {
-		return nil, err
-	}
-
-	// Update user fields
-	existingUser.Name = request.Name
-	existingUser.Email = request.Email
-
-	// Update password if provided
-	if request.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, err
-		}
-		existingUser.Password = string(hashedPassword)
-	}
-
-	// Update roles based on the request body
-	roles := request.Roles
-	if len(roles) > 0 {
-		// Clear existing roles
-		db.Model(&existingUser).Association("Roles").Clear()
-
-		// Assign new roles
-		for _, roleName := range roles {
-			roleName = strings.TrimSpace(roleName)
-			var role models.Role
-			if err := db.Where("name = ?", roleName).First(&role).Error; err == nil {
-				db.Model(&existingUser).Association("Roles").Append(&role)
-			}
-		}
-	}
-
-	// Save the updated user to the database
-	if err := db.Save(&existingUser).Error; err != nil {
-		return nil, err
-	}
-
-	return &existingUser, nil
-}
-
-func UpdateUserAPI(c *fiber.Ctx) error {
+func (u *UserHandler) UpdateUserAPI(c *fiber.Ctx) error {
 	userID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -190,7 +103,7 @@ func UpdateUserAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	request := new(UserInputBody)
+	request := new(utils.UserPayload)
 
 	// Parse JSON request body
 	if err := c.BodyParser(request); err != nil {
@@ -199,7 +112,7 @@ func UpdateUserAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := UpdateUser(userID, request)
+	updatedUser, err := utils.UpdateUser(userID, request)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Could not update user",
@@ -210,7 +123,7 @@ func UpdateUserAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Updated user", "data": updatedUser})
 }
 
-func LoginUser(c *fiber.Ctx) error {
+func (u *UserHandler) LoginUserAPI(c *fiber.Ctx) error {
 	var loginData models.User
 	if err := c.BodyParser(&loginData); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -246,7 +159,7 @@ func LoginUser(c *fiber.Ctx) error {
 
 	fmt.Println(user)
 	// Generate a JWT token with user ID and roles
-	roleNames, err := getUserRolesByID(user.ID)
+	roleNames, err := utils.GetUserRolesByID(user.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Error retrieving user roles",
@@ -272,32 +185,4 @@ func LoginUser(c *fiber.Ctx) error {
 		"message": "Success",
 		"token":   tokenString,
 	})
-}
-
-// getUserRolesByID fetches role names for a given user ID
-func getUserRolesByID(userID uuid.UUID) ([]string, error) {
-	db := database.DB
-	var roles []models.Role
-
-	if err := db.Model(&models.User{ID: userID}).Association("Roles").Find(&roles); err != nil {
-		return nil, err
-	}
-
-	var roleNames []string
-	for _, role := range roles {
-		roleNames = append(roleNames, role.Name)
-	}
-
-	return roleNames, nil
-}
-
-// GetUserByID retrieves a user by ID from the database
-func GetUserByID(userID uuid.UUID) (*models.User, error) {
-	db := database.DB
-
-	var user models.User
-	if err := db.Where("id = ?", userID).Preload("Roles").First(&user).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
 }
