@@ -27,7 +27,7 @@ func SetupRoutes(app *fiber.App) {
 func listAPIEndpoints(c *fiber.Ctx) error {
 	// Pass the type 'handler.UserHandler' to listMethods
 	listMethods(&handler.UserHandler{})
-	return c.JSON("apiCategories")
+	return c.JSON("-->")
 }
 
 func listMethods(obj interface{}) {

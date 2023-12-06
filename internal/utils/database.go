@@ -1,32 +1,12 @@
-// internal/initializer.go
-package initializers
+package utils
 
 import (
 	"fmt"
 	"gorest/database"
 	"gorest/internal/models"
-	"gorest/internal/utils"
 )
 
-// Initialize creates a superadmin user and basic roles if they don't exist
-func CreateAdmin() error {
-	// Create basic roles if they don't exist
-	if err := createBasicRoles(); err != nil {
-		return err
-	}
-
-	// Create a superadmin user if it doesn't exist
-	if _, err := createSuperAdminUser(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createBasicRoles creates basic roles if they don't exist
-func createBasicRoles() error {
-	db := database.DB
-
+func CreateBasicRoles() error {
 	roles := []models.Role{
 		{Name: "admin", Label: "Admin"},
 		{Name: "user", Label: "User"},
@@ -34,7 +14,7 @@ func createBasicRoles() error {
 
 	for _, role := range roles {
 		// Find or create the role by name
-		result := db.Where("name = ?", role.Name).FirstOrCreate(&role)
+		result := database.DB.Where("name = ?", role.Name).FirstOrCreate(&role)
 		if result.Error != nil {
 			fmt.Printf("Failed to create role '%s': %v\n", role.Name, result.Error)
 			return result.Error
@@ -45,17 +25,15 @@ func createBasicRoles() error {
 	return nil
 }
 
-func createSuperAdminUser() (*models.User, error) {
-	db := database.DB
-
+func CreateSuperAdminUser() (*models.User, error) {
 	// Check if the super admin already exists
 	var existingSuperAdmin models.User
-	if err := db.Where("email = ?", "a.e.ahandani@gmail.com").First(&existingSuperAdmin).Error; err == nil {
+	if err := database.DB.Where("email = ?", "a.e.ahandani@gmail.com").First(&existingSuperAdmin).Error; err == nil {
 		return &existingSuperAdmin, nil
 	}
 
 	// Create a new super admin user request
-	superAdminRequest := &utils.UserPayload{
+	superAdminRequest := &UserPayload{
 		User: models.User{
 			Name:     "Super Admin",
 			Email:    "a.e.ahandani@gmail.com",
@@ -65,7 +43,7 @@ func createSuperAdminUser() (*models.User, error) {
 	}
 
 	// Create the super admin user and assign roles
-	superAdmin, err := utils.CreateUser(superAdminRequest)
+	superAdmin, err := CreateUser(superAdminRequest)
 	if err != nil {
 		return nil, err
 	}

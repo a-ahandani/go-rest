@@ -2,7 +2,7 @@ package main
 
 import (
 	"gorest/database"
-	"gorest/internal/initializers"
+	"gorest/internal/utils"
 	"gorest/middlewares"
 	"gorest/router"
 
@@ -12,12 +12,11 @@ import (
 func main() {
 	app := fiber.New()
 	database.ConnectDB()
+
+	utils.CreateBasicRoles()
+	utils.CreateSuperAdminUser()
+
 	middlewares.InitCasbin()
 	router.SetupRoutes(app)
-
-	if err := initializers.CreateAdmin(); err != nil {
-		panic("Failed to initialize the application: " + err.Error())
-	}
-
 	app.Listen(":3000")
 }
