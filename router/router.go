@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"reflect"
 
 	handler "gorest/internal/handlers"
@@ -26,14 +25,16 @@ func SetupRoutes(app *fiber.App) {
 }
 func listAPIEndpoints(c *fiber.Ctx) error {
 	// Pass the type 'handler.UserHandler' to listMethods
-	listMethods(&handler.UserHandler{})
-	return c.JSON("-->")
+	a := listMethods(&handler.UserHandler{})
+	return c.JSON(a)
 }
 
-func listMethods(obj interface{}) {
+func listMethods(obj interface{}) []string {
 	t := reflect.TypeOf(obj)
+	m := []string{}
 	for i := 0; i < t.NumMethod(); i++ {
 		method := t.Method(i)
-		fmt.Println(method.Name)
+		m = append(m, method.Name)
 	}
+	return m
 }
