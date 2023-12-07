@@ -17,7 +17,6 @@ import (
 )
 
 type UserHandler struct {
-	GetUsersAPIx func(c *fiber.Ctx) error
 }
 
 func (u *UserHandler) GetUsersAPI(c *fiber.Ctx) error {

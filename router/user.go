@@ -1,4 +1,4 @@
-package userRoutes
+package router
 
 import (
 	handler "gorest/internal/handlers"

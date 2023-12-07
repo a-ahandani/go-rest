@@ -8,7 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetNotes(c *fiber.Ctx) error {
+type NoteHandler struct {
+}
+
+func (n *NoteHandler) GetNotes(c *fiber.Ctx) error {
 	db := database.DB
 	var notes []models.Note
 
@@ -23,7 +26,7 @@ func GetNotes(c *fiber.Ctx) error {
 
 }
 
-func CreateNote(c *fiber.Ctx) error {
+func (n *NoteHandler) CreateNote(c *fiber.Ctx) error {
 	db := database.DB
 	note := new(models.Note)
 	err := c.BodyParser(note)
@@ -44,7 +47,7 @@ func CreateNote(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Created note", "data": note})
 }
 
-func GetNote(c *fiber.Ctx) error {
+func (n *NoteHandler) GetNote(c *fiber.Ctx) error {
 	db := database.DB
 	var note models.Note
 
@@ -59,7 +62,7 @@ func GetNote(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Note found", "data": note})
 }
 
-func UpdateNote(c *fiber.Ctx) error {
+func (n *NoteHandler) UpdateNote(c *fiber.Ctx) error {
 	db := database.DB
 	var note models.Note
 
@@ -84,7 +87,7 @@ func UpdateNote(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Note updated", "data": note})
 }
 
-func DeleteNote(c *fiber.Ctx) error {
+func (n *NoteHandler) DeleteNote(c *fiber.Ctx) error {
 	db := database.DB
 	var note models.Note
 
