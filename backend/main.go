@@ -2,6 +2,7 @@ package main
 
 import (
 	"gorest/database"
+
 	"gorest/internal/utils"
 	"gorest/middlewares"
 	"gorest/router"
