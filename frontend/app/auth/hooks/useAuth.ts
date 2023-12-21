@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from 'next/navigation'
 
 
 export interface User {
@@ -8,7 +9,7 @@ export interface User {
 
 async function signIn({ email, password }: User) {
     try {
-        const response = await fetch('https://localhost:3000/api/auth', {
+        const response = await fetch('http://localhost:3000/api/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -17,23 +18,27 @@ async function signIn({ email, password }: User) {
         });
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || 'Authentication failed');
+            throw new Error(data.message);
         }
         return data;
     } catch (error) {
-        throw new Error('Authentication failed');
+        const { message } = error as Error;
+        throw new Error(message);
     }
 }
 
-const useSIgnIn = () => {
+const useSignIn = () => {
     const queryClient = useQueryClient();
+    const router = useRouter()
+
     return useMutation(
         {
             mutationFn: signIn,
             onSuccess: (data: any) => {
                 queryClient.setQueryData(['token'], () => data.token);
+                router.push('/users')
             },
         }
     );
 }
-export default useSIgnIn;
+export default useSignIn;

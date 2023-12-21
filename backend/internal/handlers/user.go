@@ -136,7 +136,8 @@ func (u *UserHandler) LoginUserAPI(c *fiber.Ctx) error {
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "User not found",
+				// "message": "User not found",
+				"message": "Could not login",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -148,7 +149,8 @@ func (u *UserHandler) LoginUserAPI(c *fiber.Ctx) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid password",
+				// "message": "Invalid password",
+				"message": "Could not login",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
