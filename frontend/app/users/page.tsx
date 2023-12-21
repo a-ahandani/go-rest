@@ -24,7 +24,6 @@ const Users = () => {
                 </tr>
             </thead>
             <tbody>
-                {/* row 1 */}
                 {data?.data?.map((user: any) => {
                     return <tr key={user.Id}>
                         <th>

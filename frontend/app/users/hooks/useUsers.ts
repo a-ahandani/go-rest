@@ -24,8 +24,6 @@ async function fetchUsers(token: string) {
 const useUsers = () => {
     const queryClient = useQueryClient();
     const token = queryClient.getQueryData<string>(["token"]);
-    console.log({ token });
-
     return useQuery({
         queryKey: ["users"],
         queryFn: () => fetchUsers(token || ""),
