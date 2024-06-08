@@ -10,6 +10,28 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+func validateToken(tokenString string) (*models.TokenClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &models.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.Config("SECRET")), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*models.TokenClaims)
+
+	if !ok {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
 func AuthRequired(c *fiber.Ctx) error {
 	tokenString := c.Get("Authorization")
 
@@ -30,31 +52,11 @@ func AuthRequired(c *fiber.Ctx) error {
 
 	tokenString = parts[1]
 
-	// Parse the token
-	token, err := jwt.ParseWithClaims(tokenString, &models.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(config.Config("SECRET")), nil
-	})
-
+	claims, err := validateToken(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error":   "Malformed Token",
 			"message": "Unable to parse the provided token",
-		})
-	}
-
-	if !token.Valid {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":   "Invalid Token",
-			"message": "The provided token is not valid",
-		})
-	}
-
-	claims, ok := token.Claims.(*models.TokenClaims)
-
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error":   "Malformed Token",
-			"message": "Unable to extract claims from the provided token",
 		})
 	}
 

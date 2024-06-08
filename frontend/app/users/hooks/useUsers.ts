@@ -26,7 +26,7 @@ const useUsers = () => {
     const token = queryClient.getQueryData<string>(["token"]);
     return useQuery({
         queryKey: ["users"],
-        queryFn: () => fetchUsers(token || ""),
+        queryFn: () => fetchUsers(token as string),
         enabled: !!token,
     });
 };
